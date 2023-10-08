@@ -31,10 +31,10 @@ Public Class EmettiScheda
 				If _port.BytesToRead > 1 Then
 				info = _port.ReadLine
 				_port.Write(ESC & "E")
+				Dim sw As New System.IO.StreamWriter("Data.txt",True)
+				sw.Write(info & vbCrLf)
+				sw.Close()
 			End If
-			Dim sw As New System.IO.StreamWriter("Data.txt",True)
-			sw.Write(info & vbCrLf)
-			sw.Close()
 			Catch  e As Exception
 				Dim sw As New System.IO.StreamWriter("Error.log",True)
 				sw.Write(Now & e.ToString & vbCrLf)
