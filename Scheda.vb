@@ -1,63 +1,62 @@
 Imports System
 Imports System.IO.Ports
 Imports System.Threading
-Imports System.Windows.Forms
-Public Class Scheda
+Public Class EmettiScheda
 	Const EOL As Char = Microsoft.VisualBasic.Chr(&H06)
 	Const ESC As Char = Microsoft.VisualBasic.Chr(&H1B)
-	Protected moPort As SerialPort
+	Shared _port As SerialPort
+	Shared _continue As Boolean
+	Shared _thread As Thread
 
-	Public Sub New
-		moPort = New SerialPort("COM1",9600)
-		moPort.ReadTimeout = 100
-		AddHandler moPort.DataReceived, AddressOf DataReceived
-
+	Shared Sub Init
+		_port.ReadTimeout = 500
 		Try
-			moPort.NewLine = EOL
-			moPort.Open
-			moPort.Write(ESC & "M1")
-			moPort.ReadExisting
-			moPort.Write(ESC & "E")
-		Catch
+			_port.NewLine = EOL
+			_port.Open
+			_port.Write(ESC & "M1")
+			_port.Write(ESC & "M1")
+			_port.ReadExisting
+			_port.Write(ESC & "E")
+		Catch e As Exception
+			Dim sw As New System.IO.StreamWriter("Error.log",True)
+			sw.Write(Now & e.ToString & vbCrLf)
+			sw.Close()
 		End Try
 	End Sub
-	Private Sub DataReceived(ByVal sender As Object, ByVal e As SerialDataReceivedEventArgs)
-		Try
-			If moPort.BytesToRead > 1 Then
-				ReadSerial
-			End If
-		Catch
-		End Try
-	End Sub
-	Private Sub ReadSerial
+	Shared Sub ReadSerial
 		Dim info As String = ""
-		Monitor.Enter(Me)
+		Monitor.Enter(_continue)
 		Try
 			Try
-				info = moPort.ReadLine
-				Dim sw As New System.IO.StreamWriter("Data.txt",True)
-				sw.Write(info & vbCrLf)
-				sw.Close()
-			Catch e As Exception
+				If _port.BytesToRead > 1 Then
+				info = _port.ReadLine
+				_port.Write(ESC & "E")
+			End If
+			Dim sw As New System.IO.StreamWriter("Data.txt",True)
+			sw.Write(info & vbCrLf)
+			sw.Close()
+			Catch  e As Exception
 				Dim sw As New System.IO.StreamWriter("Error.log",True)
-				sw.Write(e.ToString & vbCrLf)
+				sw.Write(Now & e.ToString & vbCrLf)
 				sw.Close()
 			End Try
-			moPort.Write(ESC & "E")
-		Catch ex As Exception
-			Dim sw As New System.IO.StreamWriter("Error.log",True)
-			sw.Write(ex.ToString & vbCrLf)
-			sw.Close()
 		Finally
-			Monitor.Exit(Me)
+			Monitor.Exit(_continue)
 		End Try
+	End Sub
+	Protected Overrides Sub Finalize()
+		_thread.Join
+		MyBase.Finalize()
 	End Sub
 
 	Public Shared Sub Main
-		Dim card As New Scheda
-		While True
+		_thread = New Thread(AddressOf ReadSerial)
+		_continue = True
+		_port = New SerialPort
+		Init
+		_thread.Start
+		While _continue
 			Thread.Sleep(50)
-			Application.DoEvents
 		End While
 	End Sub
 End Class
