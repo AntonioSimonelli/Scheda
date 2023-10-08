@@ -1,7 +1,7 @@
 Imports System
 Imports System.IO.Ports
 Imports System.Threading
-Public Class EmettiScheda
+Public Class Scheda
 	Const EOL As Char = Microsoft.VisualBasic.Chr(&H06)
 	Const ESC As Char = Microsoft.VisualBasic.Chr(&H1B)
 	Shared _port As SerialPort
@@ -19,7 +19,7 @@ Public Class EmettiScheda
 			_port.Write(ESC & "E")
 		Catch e As Exception
 			Dim sw As New System.IO.StreamWriter("Error.log",True)
-			sw.Write(Now & e.ToString & vbCrLf)
+			sw.Write(Now & " " & e.ToString & vbCrLf)
 			sw.Close()
 		End Try
 	End Sub
@@ -37,7 +37,7 @@ Public Class EmettiScheda
 			End If
 			Catch  e As Exception
 				Dim sw As New System.IO.StreamWriter("Error.log",True)
-				sw.Write(Now & e.ToString & vbCrLf)
+				sw.Write(Now & " " & e.ToString & vbCrLf)
 				sw.Close()
 			End Try
 		Finally
